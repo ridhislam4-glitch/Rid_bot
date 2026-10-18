@@ -52,7 +52,7 @@
     "notes": "If enabled, only IDs in whiteListIds can use the bot."
   },
   "whiteListModeThread": {
-    "enable": false,
+    "enable": true,
     "whiteListThreadIds": [],
     "notes": "If enabled, only threads in whiteListThreadIds can use the bot."
   },

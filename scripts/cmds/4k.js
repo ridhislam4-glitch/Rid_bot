@@ -3,52 +3,51 @@ const axios = require("axios");
 module.exports = {
   config: {
     name: "4k",
-    version: "2.0",
-    author: "MahMUD | Fixed by Ridoan",
-    countDown: 10,
+    version: "3.0",
+    author: "Fixed by Ridoan",
+    countDown: 15,
     role: 0,
     category: "AI",
-    description: "Enhance or restore image quality using 4k AI.",
-    guide: { en: "{pn} [reply to image or url]" }
+    guide: { en: "{pn} reply to image" }
   },
 
   onStart: async function ({ message, event, args }) {
     let imgUrl;
     if (event.messageReply?.attachments?.[0]?.type === "photo") {
       imgUrl = event.messageReply.attachments[0].url;
-    } else if (args[0]) {
+    } else if (args[0] && args[0].startsWith("http")) {
       imgUrl = args[0];
+    } else {
+      return message.reply("❌ Please reply to an image.");
     }
 
-    if (!imgUrl) {
-      return message.reply("Please reply to an image or provide an image URL");
-    }
+    const wait = await message.reply("⏳ Enhancing to 4K... Please wait 15s");
 
-    const waitMsg = await message.reply("Loading 4k image... wait baby 😘");
-    
-    try {
-      // base API fetch with fallback
-      let baseUrl;
+    // 3 ta different API try korbe, ekta na cholle arekta
+    const apis = [
+      `https://api.ryzendesu.vip/api/ai/upscale?url=${encodeURIComponent(imgUrl)}`,
+      `https://api.qasimali.dev/api/remini?imageUrl=${encodeURIComponent(imgUrl)}`,
+      `https://api.princetechn.com/api/tools/remini?url=${encodeURIComponent(imgUrl)}`
+    ];
+
+    for (const apiUrl of apis) {
       try {
-        const base = await axios.get("https://raw.githubusercontent.com/mahmudx7/HINATA/main/baseApiUrl.json");
-        baseUrl = base.data.mahmud;
-      } catch {
-        baseUrl = "https://www.noobs-api.rf.gd"; // fallback
+        const res = await axios.get(apiUrl, { responseType: "stream", timeout: 30000 });
+        // jodi stream pay
+        if (res.data) {
+          await message.unsend(wait.messageID);
+          return message.reply({
+            body: "✅ | Here's your 4K image",
+            attachment: res.data
+          });
+        }
+      } catch (e) {
+        continue; // ekta fail korle porer ta try korbe
       }
-
-      const apiUrl = `${baseUrl}/api/hd?imgUrl=${encodeURIComponent(imgUrl)}`;
-      const res = await axios.get(apiUrl, { responseType: "stream" });
-
-      await message.unsend(waitMsg.messageID);
-      return message.reply({
-        body: `✅ | Here's your 4k image baby`,
-        attachment: res.data
-      });
-
-    } catch (error) {
-      console.log(error);
-      if (waitMsg?.messageID) message.unsend(waitMsg.messageID);
-      return message.reply(`Error: API down. Try again later.`);
     }
+
+    // sob fail korle
+    await message.unsend(wait.messageID);
+    return message.reply("❌ All 4K APIs are down now. Try again after 5 minutes. Facebook image URL diye try koro, Google link e hoy na.");
   }
 };
